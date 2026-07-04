@@ -6,6 +6,7 @@ import com.linklens.backend.entity.User;
 import com.linklens.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.linklens.backend.dto.LoginRequest;
 
 import java.time.LocalDateTime;
 
@@ -24,6 +25,7 @@ public class UserService {
 
     public String register(RegisterRequest request) {
 
+
         if(userRepository.existsByEmail(request.getEmail())){
             return "Email already exists";
         }
@@ -39,5 +41,20 @@ public class UserService {
         userRepository.save(user);
 
         return "User Registered Successfully";
+    }
+    public String login(LoginRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElse(null);
+
+        if (user == null) {
+            return "Invalid Email or Password";
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            return "Invalid Email or Password";
+        }
+
+        return "Login Successful";
     }
 }
