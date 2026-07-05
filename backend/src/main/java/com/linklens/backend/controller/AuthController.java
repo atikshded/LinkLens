@@ -1,5 +1,6 @@
 package com.linklens.backend.controller;
 
+import com.linklens.backend.dto.LoginResponse;
 import com.linklens.backend.dto.RegisterRequest;
 import com.linklens.backend.service.UserService;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +22,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody LoginRequest request) {
+    public LoginResponse login(@RequestBody LoginRequest request) {
         return userService.login(request);
     }
 }

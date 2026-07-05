@@ -1,5 +1,6 @@
 package com.linklens.backend.service;
 
+import com.linklens.backend.dto.LoginResponse;
 import com.linklens.backend.dto.RegisterRequest;
 import com.linklens.backend.entity.AuthProvider;
 import com.linklens.backend.entity.User;
@@ -7,6 +8,8 @@ import com.linklens.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.linklens.backend.dto.LoginRequest;
+import com.linklens.backend.security.JwtService;
+
 
 import java.time.LocalDateTime;
 
@@ -15,12 +18,15 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public UserService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     public String register(RegisterRequest request) {
@@ -42,19 +48,20 @@ public class UserService {
 
         return "User Registered Successfully";
     }
-    public String login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElse(null);
 
         if (user == null) {
-            return "Invalid Email or Password";
+            throw new RuntimeException("Invalid Email or Password");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return "Invalid Email or Password";
+            throw new RuntimeException("Invalid Email or Password");
         }
 
-        return "Login Successful";
+        String token = jwtService.generateToken(user.getEmail());
+        return new LoginResponse(token, "Bearer");
     }
 }
