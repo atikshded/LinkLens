@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# IntelliJ
+.idea/
+
+# Maven
+target/
+
+# Environment
+src/main/resources/application.properties
