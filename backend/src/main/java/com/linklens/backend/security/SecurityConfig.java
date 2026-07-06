@@ -32,6 +32,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/{shortCode}").permitAll()
                         .anyRequest().authenticated()
                 )
 

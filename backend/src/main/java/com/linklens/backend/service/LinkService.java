@@ -50,4 +50,17 @@ public class LinkService {
                 "http://localhost:8081/" + link.getShortCode()
         );
     }
-}
+
+        public String getOriginalUrl(String shortCode) {
+
+            Link link = linkRepository.findByShortCode(shortCode)
+                    .orElseThrow(() ->
+                            new RuntimeException("Short URL not found"));
+
+            link.setClickCount(link.getClickCount() + 1);
+
+            linkRepository.save(link);
+
+            return link.getOriginalUrl();
+        }
+    }
