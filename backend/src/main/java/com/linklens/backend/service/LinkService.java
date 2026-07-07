@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import com.linklens.backend.exception.AccessDeniedException;
+import com.linklens.backend.service.ClickEventService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,11 +24,15 @@ public class LinkService {
 
     private final LinkRepository linkRepository;
     private final UserRepository userRepository;
+    private final ClickEventService clickEventService;
 
     public LinkService(LinkRepository linkRepository,
-                       UserRepository userRepository) {
+                       UserRepository userRepository,
+                       ClickEventService clickEventService) {
+
         this.linkRepository = linkRepository;
         this.userRepository = userRepository;
+        this.clickEventService = clickEventService;
     }
 
     /**
@@ -79,7 +84,10 @@ public class LinkService {
      * Returns the original URL for a short code
      * and increments click count.
      */
-    public String getOriginalUrl(String shortCode) {
+    public String getOriginalUrl(
+            String shortCode,
+            String userAgent,
+            String ipAddress) {
 
         Link link = linkRepository.findByShortCode(shortCode)
                 .orElseThrow(() ->
@@ -88,6 +96,8 @@ public class LinkService {
         link.setClickCount(link.getClickCount() + 1);
 
         linkRepository.save(link);
+
+        clickEventService.recordClick(link, userAgent, ipAddress);
 
         return link.getOriginalUrl();
     }
