@@ -34,6 +34,10 @@ public class ClickEvent {
 
     private String city;
 
+    private Double latitude;
+
+    private Double longitude;
+
     private String ipAddress;
 
     private String referrer;

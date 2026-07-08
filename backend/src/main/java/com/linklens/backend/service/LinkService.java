@@ -10,11 +10,12 @@ import com.linklens.backend.exception.ResourceNotFoundException;
 import com.linklens.backend.repository.LinkRepository;
 import com.linklens.backend.repository.UserRepository;
 import com.linklens.backend.util.ShortCodeGenerator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import com.linklens.backend.exception.AccessDeniedException;
-import com.linklens.backend.service.ClickEventService;
+import com.linklens.backend.util.AliasValidator;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,14 +26,20 @@ public class LinkService {
     private final LinkRepository linkRepository;
     private final UserRepository userRepository;
     private final ClickEventService clickEventService;
+    private final RedisService redisService;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     public LinkService(LinkRepository linkRepository,
                        UserRepository userRepository,
-                       ClickEventService clickEventService) {
+                       ClickEventService clickEventService,
+                       RedisService redisService) {
 
         this.linkRepository = linkRepository;
         this.userRepository = userRepository;
         this.clickEventService = clickEventService;
+        this.redisService = redisService;
     }
 
     /**
@@ -59,24 +66,46 @@ public class LinkService {
 
         String shortCode;
 
-        do {
-            shortCode = ShortCodeGenerator.generate();
-        } while (linkRepository.existsByShortCode(shortCode));
+        if (request.getCustomAlias() != null &&
+                !request.getCustomAlias().isBlank()) {
+
+            shortCode = request.getCustomAlias().trim();
+
+            if (!AliasValidator.isValid(shortCode)) {
+                throw new IllegalArgumentException(
+                        "Invalid custom alias."
+                );
+            }
+
+            if (linkRepository.existsByShortCode(shortCode)) {
+                throw new IllegalArgumentException(
+                        "This custom alias is already taken."
+                );
+            }
+
+        } else {
+
+            do {
+                shortCode = ShortCodeGenerator.generate();
+            } while (linkRepository.existsByShortCode(shortCode));
+        }
 
         Link link = Link.builder()
                 .originalUrl(request.getOriginalUrl())
                 .shortCode(shortCode)
                 .createdAt(LocalDateTime.now())
+                .expiresAt(request.getExpiresAt())
                 .clickCount(0L)
                 .user(user)
                 .build();
 
         linkRepository.save(link);
 
+
         return new LinkResponse(
                 link.getOriginalUrl(),
                 link.getShortCode(),
-                "http://localhost:8081/" + link.getShortCode()
+                baseUrl + "/" + link.getShortCode()
         );
     }
 
@@ -89,15 +118,49 @@ public class LinkService {
             String userAgent,
             String ipAddress) {
 
+        String cachedUrl = redisService.getUrl(shortCode);
+
+        if (cachedUrl != null) {
+
+            System.out.println("✅ Cache HIT");
+
+            Link link = linkRepository.findByShortCode(shortCode)
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("Short URL not found"));
+
+            link.setClickCount(link.getClickCount() + 1);
+            linkRepository.save(link);
+
+            clickEventService.recordClick(
+                    link,
+                    userAgent,
+                    ipAddress
+            );
+
+            return cachedUrl;
+        }
+
+        System.out.println("❌ Cache MISS");
+
         Link link = linkRepository.findByShortCode(shortCode)
                 .orElseThrow(() ->
                         new RuntimeException("Short URL not found"));
+        if (link.getExpiresAt() != null &&
+                LocalDateTime.now().isAfter(link.getExpiresAt())) {
+
+            throw new ResourceNotFoundException("This link has expired.");
+        }
 
         link.setClickCount(link.getClickCount() + 1);
 
         linkRepository.save(link);
 
         clickEventService.recordClick(link, userAgent, ipAddress);
+
+        redisService.saveUrl(
+                shortCode,
+                link.getOriginalUrl()
+        );
 
         return link.getOriginalUrl();
     }
@@ -116,7 +179,7 @@ public class LinkService {
                         link.getId(),
                         link.getOriginalUrl(),
                         link.getShortCode(),
-                        "http://localhost:8081/" + link.getShortCode(),
+                        baseUrl + "/" + link.getShortCode(),
                         link.getClickCount(),
                         link.getCreatedAt()
                 ))
@@ -135,10 +198,19 @@ public class LinkService {
                 link.getId(),
                 link.getOriginalUrl(),
                 link.getShortCode(),
-                "http://localhost:8081/" + link.getShortCode(),
+                baseUrl + "/" + link.getShortCode(),
                 link.getClickCount(),
                 link.getCreatedAt(),
                 link.getExpiresAt()
         );
+    }
+
+    public String getShortUrl(Long linkId) {
+
+        Link link = linkRepository.findById(linkId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Link not found"));
+
+        return  baseUrl + "/" + link.getShortCode();
     }
 }

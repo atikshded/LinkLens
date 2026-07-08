@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import java.util.Objects;
-
 import java.time.LocalDateTime;
+
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -55,5 +55,21 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimit(
+            RateLimitExceededException ex) {
+
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                ex.getMessage()
+        );
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.TOO_MANY_REQUESTS
+        );
     }
 }

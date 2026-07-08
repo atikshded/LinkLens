@@ -4,12 +4,16 @@ import com.linklens.backend.dto.*;
 import com.linklens.backend.service.LinkService;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-
 import org.springframework.web.bind.annotation.PathVariable;
 import jakarta.validation.Valid;
 import com.linklens.backend.service.AnalyticsService;
 import com.linklens.backend.dto.LinkAnalyticsResponse;
 import com.linklens.backend.dto.DailyClickResponse;
+import com.linklens.backend.util.QRCodeGenerator;
+import org.springframework.http.MediaType;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 
 @RestController
 @RequestMapping("/api/links")
@@ -54,5 +58,32 @@ public class LinkController {
             @PathVariable Long id) {
 
         return analyticsService.getDailyClicks(id);
+    }
+
+    @GetMapping(value = "/{id}/qr",
+            produces = MediaType.IMAGE_PNG_VALUE)
+    public byte[] getQRCode(
+            @PathVariable Long id) throws Exception {
+
+        String shortUrl =
+                linkService.getShortUrl(id);
+
+        BufferedImage image =
+                QRCodeGenerator.generateQRCode(
+                        shortUrl,
+                        300,
+                        300
+                );
+
+        ByteArrayOutputStream outputStream =
+                new ByteArrayOutputStream();
+
+        ImageIO.write(
+                image,
+                "PNG",
+                outputStream
+        );
+
+        return outputStream.toByteArray();
     }
 }
