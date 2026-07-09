@@ -2,6 +2,8 @@ package com.linklens.backend.controller;
 
 import com.linklens.backend.dto.*;
 import com.linklens.backend.service.LinkService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +16,13 @@ import org.springframework.http.MediaType;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+@Tag(
+        name = "Links",
+        description = "Manage shortened URLs"
+)
 
 @RestController
 @RequestMapping("/api/links")
@@ -29,6 +38,10 @@ public class LinkController {
         this.analyticsService = analyticsService;
     }
 
+    @Operation(
+            summary = "Create Short Link",
+            description = "Creates a shortened URL with an optional custom alias and expiry date."
+    )
     @PostMapping
     public LinkResponse createShortLink(
             @Valid @RequestBody CreateLinkRequest request) {
@@ -36,16 +49,38 @@ public class LinkController {
         return linkService.createShortLink(request);
     }
 
+    @Operation(
+            summary = "Get My Links",
+            description = "Returns all shortened URLs created by the authenticated user."
+    )
     @GetMapping
     public List<LinkSummaryResponse> getMyLinks() {
         return linkService.getMyLinks();
     }
 
+    @Operation(
+            summary = "Get Link Details",
+            description = "Returns complete information for a specific shortened URL."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Link details returned successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Link not found")
+    })
     @GetMapping("/{id}")
     public LinkDetailsResponse getLinkDetails(@PathVariable Long id) {
         return linkService.getLinkDetails(id);
     }
 
+    @Operation(
+            summary = "Link Analytics",
+            description = "Returns analytics such as total clicks, top browser and top operating system."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Analytics returned successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Link not found")
+    })
     @GetMapping("/{id}/analytics")
     public LinkAnalyticsResponse getAnalytics(
             @PathVariable Long id) {
@@ -53,6 +88,10 @@ public class LinkController {
         return analyticsService.getAnalytics(id);
     }
 
+    @Operation(
+            summary = "Daily Click Analytics",
+            description = "Returns the number of clicks grouped by date."
+    )
     @GetMapping("/{id}/daily-clicks")
     public List<DailyClickResponse> getDailyClicks(
             @PathVariable Long id) {
@@ -60,6 +99,10 @@ public class LinkController {
         return analyticsService.getDailyClicks(id);
     }
 
+    @Operation(
+            summary = "Generate QR Code",
+            description = "Generates a QR code image for the shortened URL."
+    )
     @GetMapping(value = "/{id}/qr",
             produces = MediaType.IMAGE_PNG_VALUE)
     public byte[] getQRCode(
