@@ -84,7 +84,6 @@ public class LinkController {
     @GetMapping("/{id}/analytics")
     public LinkAnalyticsResponse getAnalytics(
             @PathVariable Long id) {
-
         return analyticsService.getAnalytics(id);
     }
 

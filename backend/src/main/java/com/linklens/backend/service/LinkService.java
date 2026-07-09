@@ -105,7 +105,7 @@ public class LinkService {
         return new LinkResponse(
                 link.getOriginalUrl(),
                 link.getShortCode(),
-                baseUrl + "/" + link.getShortCode()
+                baseUrl + "/r/" + link.getShortCode()
         );
     }
 
@@ -179,7 +179,7 @@ public class LinkService {
                         link.getId(),
                         link.getOriginalUrl(),
                         link.getShortCode(),
-                        baseUrl + "/" + link.getShortCode(),
+                        baseUrl + "/r/" + link.getShortCode(),
                         link.getClickCount(),
                         link.getCreatedAt()
                 ))
@@ -198,7 +198,7 @@ public class LinkService {
                 link.getId(),
                 link.getOriginalUrl(),
                 link.getShortCode(),
-                baseUrl + "/" + link.getShortCode(),
+                baseUrl + "/r/" + link.getShortCode(),
                 link.getClickCount(),
                 link.getCreatedAt(),
                 link.getExpiresAt()
@@ -211,6 +211,6 @@ public class LinkService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Link not found"));
 
-        return  baseUrl + "/" + link.getShortCode();
+        return baseUrl + "/r/" + link.getShortCode();
     }
 }

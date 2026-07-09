@@ -6,6 +6,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import com.linklens.backend.security.OAuth2SuccessHandler;
 
 @Configuration
 public class SecurityConfig {
@@ -21,7 +22,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthenticationFilter jwtAuthenticationFilter)
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            OAuth2SuccessHandler oAuth2SuccessHandler)
             throws Exception {
 
         http
@@ -34,14 +36,20 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/oauth2/**",
+                                "/login/**",
                                 "/api/links/*/qr",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/{shortCode}"
+                                "/r/**"
                         ).permitAll()
 
                         .anyRequest().authenticated()
+                )
+
+                .oauth2Login(oauth -> oauth
+                        .successHandler(oAuth2SuccessHandler)
                 )
 
                 .addFilterBefore(

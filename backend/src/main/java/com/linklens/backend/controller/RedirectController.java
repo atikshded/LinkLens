@@ -40,7 +40,7 @@ public class RedirectController {
             @ApiResponse(responseCode = "404", description = "Short URL not found"),
             @ApiResponse(responseCode = "429", description = "Rate limit exceeded")
     })
-    @GetMapping("/{shortCode}")
+    @GetMapping("/r/{shortCode}")
     public ResponseEntity<Void> redirect(
             @PathVariable String shortCode,
             HttpServletRequest request) {
