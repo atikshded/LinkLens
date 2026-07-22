@@ -169,7 +169,7 @@ const [showPassword, setShowPassword] = useState(false);
 
         <GoogleButton onClick={() => console.log("Google")} />
 
-        <p className="pt-0 text-center text-slate-400">
+        <p className="pt-0 text-center text-sm text-slate-400">
 
           New to LinkLens?
 
