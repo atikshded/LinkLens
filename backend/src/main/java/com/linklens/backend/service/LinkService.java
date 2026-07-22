@@ -27,6 +27,7 @@ public class LinkService {
     private final UserRepository userRepository;
     private final ClickEventService clickEventService;
     private final RedisService redisService;
+    private final VariantSelectionService variantSelectionService;
 
     @Value("${app.base-url}")
     private String baseUrl;
@@ -34,12 +35,14 @@ public class LinkService {
     public LinkService(LinkRepository linkRepository,
                        UserRepository userRepository,
                        ClickEventService clickEventService,
-                       RedisService redisService) {
+                       RedisService redisService,
+                       VariantSelectionService variantSelectionService) {
 
         this.linkRepository = linkRepository;
         this.userRepository = userRepository;
         this.clickEventService = clickEventService;
         this.redisService = redisService;
+        this.variantSelectionService = variantSelectionService;
     }
 
     /**
@@ -103,6 +106,7 @@ public class LinkService {
 
 
         return new LinkResponse(
+                link.getId(),
                 link.getOriginalUrl(),
                 link.getShortCode(),
                 baseUrl + "/r/" + link.getShortCode()
@@ -118,33 +122,33 @@ public class LinkService {
             String userAgent,
             String ipAddress) {
 
-        String cachedUrl = redisService.getUrl(shortCode);
+//        String cachedUrl = redisService.getUrl(shortCode);
 
-        if (cachedUrl != null) {
+//        if (cachedUrl != null) {
+//
+//            System.out.println("✅ Cache HIT");
+//
+//            Link link = linkRepository.findByShortCode(shortCode)
+//                    .orElseThrow(() ->
+//                            new ResourceNotFoundException("Short URL not found"));
+//
+//            link.setClickCount(link.getClickCount() + 1);
+//            linkRepository.save(link);
+//
+//            clickEventService.recordClick(
+//                    link,
+//                    userAgent,
+//                    ipAddress
+//            );
+//
+//            return cachedUrl;
+//        }
 
-            System.out.println("✅ Cache HIT");
-
-            Link link = linkRepository.findByShortCode(shortCode)
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException("Short URL not found"));
-
-            link.setClickCount(link.getClickCount() + 1);
-            linkRepository.save(link);
-
-            clickEventService.recordClick(
-                    link,
-                    userAgent,
-                    ipAddress
-            );
-
-            return cachedUrl;
-        }
-
-        System.out.println("❌ Cache MISS");
+//        System.out.println("❌ Cache MISS");
 
         Link link = linkRepository.findByShortCode(shortCode)
                 .orElseThrow(() ->
-                        new RuntimeException("Short URL not found"));
+                        new ResourceNotFoundException("Short URL not found"));
         if (link.getExpiresAt() != null &&
                 LocalDateTime.now().isAfter(link.getExpiresAt())) {
 
@@ -157,12 +161,14 @@ public class LinkService {
 
         clickEventService.recordClick(link, userAgent, ipAddress);
 
-        redisService.saveUrl(
-                shortCode,
-                link.getOriginalUrl()
-        );
+        String destinationUrl = getDestinationUrl(link);
 
-        return link.getOriginalUrl();
+        // Temporarily disable redirect URL caching
+        // until we redesign Redis for variant-aware caching.
+
+        // redisService.saveUrl(shortCode, destinationUrl);
+
+        return destinationUrl;
     }
 
     /**
@@ -212,5 +218,16 @@ public class LinkService {
                         new ResourceNotFoundException("Link not found"));
 
         return baseUrl + "/r/" + link.getShortCode();
+    }
+
+    private String getDestinationUrl(Link link) {
+
+        if (link.getVariants() == null || link.getVariants().isEmpty()) {
+            return link.getOriginalUrl();
+        }
+
+        return variantSelectionService
+                .chooseVariant(link.getVariants())
+                .getDestinationUrl();
     }
 }

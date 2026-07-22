@@ -7,6 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class LinkResponse {
 
+    private Long id;
     private String originalUrl;
     private String shortCode;
     private String shortUrl;
