@@ -2,22 +2,23 @@ import { useState } from "react";
 import { FiEye, FiEyeOff, FiMail, FiLock } from "react-icons/fi";
 import Button from "../ui/Button";
 import GoogleButton from "./GoogleButton";
+import { Link } from "react-router-dom";
 
 function LoginCard({
-    email,
-    password,
-    onEmailChange,
-    onPasswordChange,
-    onSubmit,
-    loading,
+  email,
+  password,
+  onEmailChange,
+  onPasswordChange,
+  onSubmit,
+  loading,
 }) {
+
+  const [showPassword, setShowPassword] = useState(false);
   
-const [showPassword, setShowPassword] = useState(false);
-  ;
 
   return (
-   <div
-  className="
+    <div
+      className="
     relative
     w-full
     max-w-[480px]
@@ -30,7 +31,7 @@ const [showPassword, setShowPassword] = useState(false);
     backdrop-blur-xl
     shadow-[0_25px_80px_rgba(124,58,237,.15)]
   "
->
+    >
       {/* Glow */}
 
       <div className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-violet-400 to-transparent" />
@@ -38,23 +39,23 @@ const [showPassword, setShowPassword] = useState(false);
       {/* Heading */}
 
       <p className="text-sm font-semibold uppercase tracking-[0.35em] text-violet-400">
-        Welcome Back
+        LINKLENS
       </p>
 
-     <h1 className="mt-2 text-3xl leading-tight font-bold tracking-tight text-white">
-    Sign in
-</h1>
+      <h1 className="mt-2 text-3xl leading-tight font-bold tracking-tight text-white">
+        Welcome Back
+      </h1>
 
       <p className="mt-1 text-sm leading-5 text-slate-400">
-        Access your dashboard and manage your smart links.
+        Sign in to continue managing your smart links.
       </p>
 
       {/* Form */}
 
       <form
-    onSubmit={onSubmit}
-    className="mt-4 space-y-2"
->
+        onSubmit={onSubmit}
+        className="mt-4 space-y-2"
+      >
         {/* Email */}
 
         <div>
@@ -146,12 +147,12 @@ const [showPassword, setShowPassword] = useState(false);
         </div>
 
         <Button
-    type="submit"
-    disabled={loading}
-    className="mt-1 h-11 rounded-2xl"
->
-    {loading ? "Signing In..." : "Sign In"}
-</Button>
+          type="submit"
+          disabled={loading}
+          className="mt-1 h-11 rounded-2xl"
+        >
+          {loading ? "Signing In..." : "Sign In"}
+        </Button>
 
         {/* Divider */}
 
@@ -167,18 +168,23 @@ const [showPassword, setShowPassword] = useState(false);
 
         </div>
 
-        <GoogleButton onClick={() => console.log("Google")} />
+        <GoogleButton
+          onClick={() => {
+            window.location.href =
+              "http://localhost:8081/oauth2/authorization/google";
+          }}
+        />
 
         <p className="pt-0 text-center text-sm text-slate-400">
 
           New to LinkLens?
 
-          <button
-            type="button"
+          <Link
+            to="/register"
             className="ml-2 font-semibold text-violet-400 hover:text-violet-300"
           >
             Create Account
-          </button>
+          </Link>
 
         </p>
 

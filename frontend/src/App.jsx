@@ -11,6 +11,7 @@ import Settings from "./pages/Settings";
 
 import DashboardLayout from "./layouts/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import OAuthSuccess from "./pages/OAuthSuccess";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/oauth-success" element={<OAuthSuccess />} />
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>

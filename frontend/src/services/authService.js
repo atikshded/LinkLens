@@ -18,3 +18,7 @@ export async function register(name, email, password) {
 
   return response.data;
 }
+
+export function logout() {
+  localStorage.removeItem("token");
+}

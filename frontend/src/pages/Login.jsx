@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import LoginCard from "../components/auth/LoginCard";
 import { login } from "../services/authService";
+import toast from "react-hot-toast";
 
 function Login() {
   const navigate = useNavigate();
@@ -22,11 +23,12 @@ function Login() {
 
       localStorage.setItem("token", response.token);
 
+      toast.success("Welcome back!");
       navigate("/dashboard");
 
     } catch (err) {
       console.error(err);
-      alert("Invalid email or password.");
+      toast.error("Invalid email or password");
     } finally {
       setLoading(false);
     }
