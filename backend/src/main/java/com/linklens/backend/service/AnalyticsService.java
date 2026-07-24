@@ -59,7 +59,9 @@ public class AnalyticsService {
                 topBrowser,
                 topOS,
                 browserDistribution,
-                osDistribution
+                osDistribution,
+                "http://localhost:8081/r/" + link.getShortCode(),
+                link.getOriginalUrl()
         );
     }
 

@@ -28,6 +28,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/links" element={<Links />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/analytics/:id" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>

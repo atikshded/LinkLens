@@ -1,14 +1,15 @@
 package com.linklens.backend.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 
-@Getter
+import java.time.LocalDateTime;
+
+@Data
 @AllArgsConstructor
-public class LoginResponse {
+public class UserProfileResponse {
 
-    private String token;
-    private String type;
     private String name;
     private String email;
+    private LocalDateTime createdAt;
 }

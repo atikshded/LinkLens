@@ -21,4 +21,8 @@ public class LinkAnalyticsResponse {
     private Map<String, Long> browserDistribution;
 
     private Map<String, Long> operatingSystemDistribution;
+
+    private String shortUrl;
+
+    private String originalUrl;
 }

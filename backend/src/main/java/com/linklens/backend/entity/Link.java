@@ -43,4 +43,10 @@ public class Link {
             orphanRemoval = true
     )
     private List<LinkVariant> variants = new ArrayList<>();
+    @OneToMany(
+            mappedBy = "link",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<ClickEvent> clickEvents = new ArrayList<>();
 }

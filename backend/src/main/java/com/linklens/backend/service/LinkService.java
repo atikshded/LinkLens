@@ -120,7 +120,11 @@ public class LinkService {
     public String getOriginalUrl(
             String shortCode,
             String userAgent,
-            String ipAddress) {
+            String ipAddress)
+    {
+
+        System.out.println("========== REDIRECT ==========");
+        System.out.println("Received shortCode: '" + shortCode + "'");
 
 //        String cachedUrl = redisService.getUrl(shortCode);
 
@@ -146,14 +150,26 @@ public class LinkService {
 
 //        System.out.println("❌ Cache MISS");
 
+        System.out.println("Looking up in database...");
+        System.out.println("----- ALL LINKS -----");
+        linkRepository.findAll().forEach(link ->
+                System.out.println(
+                        "id=" + link.getId() +
+                                ", shortCode='" + link.getShortCode() + "'"
+                )
+        );
+        System.out.println("---------------------");
+
+        System.out.println("All short codes in DB:");
+
+        linkRepository.findAll().forEach(l ->
+                System.out.println("'" + l.getShortCode() + "'"));
+
         Link link = linkRepository.findByShortCode(shortCode)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Short URL not found"));
-        if (link.getExpiresAt() != null &&
-                LocalDateTime.now().isAfter(link.getExpiresAt())) {
 
-            throw new ResourceNotFoundException("This link has expired.");
-        }
+        System.out.println("Found link: " + link.getShortCode());
 
         link.setClickCount(link.getClickCount() + 1);
 
@@ -220,6 +236,21 @@ public class LinkService {
         return baseUrl + "/r/" + link.getShortCode();
     }
 
+    public void deleteLink(Long id) {
+
+        User currentUser = getCurrentUser();
+
+        Link link = linkRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Link not found"));
+
+        if (!link.getUser().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("Access Denied");
+        }
+
+        linkRepository.delete(link);
+    }
+
     private String getDestinationUrl(Link link) {
 
         if (link.getVariants() == null || link.getVariants().isEmpty()) {
@@ -230,4 +261,5 @@ public class LinkService {
                 .chooseVariant(link.getVariants())
                 .getDestinationUrl();
     }
+
 }

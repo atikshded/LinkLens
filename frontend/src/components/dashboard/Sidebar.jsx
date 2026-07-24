@@ -6,7 +6,9 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import ConfirmationModal from "../modals/ConfirmationModal";
 
 const menu = [
   {
@@ -32,6 +34,24 @@ const menu = [
 ];
 
 function Sidebar() {
+  const navigate = useNavigate();
+
+const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+const handleLogoutClick = () => {
+  console.log("Logout button clicked");
+  setShowLogoutModal(true);
+};
+
+const handleLogout = () => {
+  setShowLogoutModal(false);
+  localStorage.removeItem("token");
+  navigate("/");
+};
+
+const handleCancelLogout = () => {
+  setShowLogoutModal(false);
+};
   return (
     <aside className="flex w-72 flex-col border-r border-slate-800 bg-[#0A0F1F]">
 
@@ -80,7 +100,10 @@ function Sidebar() {
 
       <div className="border-t border-slate-800 p-6">
 
-        <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-900 hover:text-white">
+        <button
+  onClick={handleLogoutClick}
+  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-900 hover:text-white"
+>
 
           <FiLogOut />
 
@@ -90,15 +113,18 @@ function Sidebar() {
 
       </div>
 
+      <ConfirmationModal
+  isOpen={showLogoutModal}
+  title="Log Out"
+  message="Are you sure you want to log out?"
+  confirmText="Log Out"
+  cancelText="Cancel"
+  onConfirm={handleLogout}
+  onCancel={handleCancelLogout}
+/>
+
     </aside>
   );
-}
-
-function logout() {
-
-    localStorage.removeItem("token");
-
-    navigate("/");
 }
 
 export default Sidebar;

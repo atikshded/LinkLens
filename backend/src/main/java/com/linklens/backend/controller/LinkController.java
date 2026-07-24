@@ -127,5 +127,23 @@ public class LinkController {
         );
 
         return outputStream.toByteArray();
+
+
     }
+
+@Operation(
+        summary = "Delete Link",
+        description = "Deletes a shortened URL owned by the authenticated user."
+)
+@DeleteMapping("/{id}")
+public void deleteLink(@PathVariable Long id) {
+
+    System.out.println("================================");
+    System.out.println("DELETE API HIT");
+    System.out.println("ID = " + id);
+    System.out.println("================================");
+
+    linkService.deleteLink(id);
+}
+
 }

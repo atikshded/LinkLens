@@ -1,9 +1,7 @@
 import StatCard from "../components/dashboard/StatCard";
 import ChartCard from "../components/dashboard/ChartCard";
 import RecentLinks from "../components/dashboard/RecentLinks";
-import CountryCard from "../components/dashboard/CountryCard";
-import DeviceCard from "../components/dashboard/DeviceCard";
-
+import BrowserCard from "../components/dashboard/BrowserCard";
 
 import {
   FiMousePointer,
@@ -12,41 +10,86 @@ import {
   FiTrendingUp,
 } from "react-icons/fi";
 
+import { useEffect, useState } from "react";
+import api from "../services/api";
+
 function Dashboard() {
+  const [dashboard, setDashboard] = useState(null);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
+  const fetchDashboard = async () => {
+    try {
+      const response = await api.get("/dashboard");
+      setDashboard(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (!dashboard) {
+    return (
+      <div className="flex h-96 items-center justify-center text-slate-400">
+        Loading Dashboard...
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
 
-      <div>
-        <h1 className="text-4xl font-bold text-white">
-          Dashboard
-        </h1>
+      {/* Stats */}
+      <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          title="Total Clicks"
+          value={dashboard.totalClicks.toLocaleString()}
+          change="Updated today"
+          badge="Live"
+          icon={<FiMousePointer />}
+        />
 
-        <p className="mt-2 text-slate-400">
-          Welcome back! Here's an overview of your links.
-        </p>
+        <StatCard
+          title="Total Links"
+          value={dashboard.totalLinks}
+          change="Updated today"
+          badge="Active"
+          icon={<FiLink2 />}
+        />
+
+        <StatCard
+          title="Top Browser"
+          value={dashboard.topBrowser}
+          change="Currently active"
+          badge="Healthy"
+          icon={<FiTrendingUp />}
+        />
+
+        <StatCard
+          title="Top Operating System"
+          value={dashboard.topOperatingSystem}
+          change="Highest traffic"
+          badge="Top"
+          icon={<FiGlobe />}
+        />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      {/* Click Activity */}
+      <ChartCard
+        data={dashboard.clicksLast7Days}
+        totalClicks={dashboard.totalClicks}
+      />
 
-        <StatCard title="Total Clicks" value="12,486" icon={<FiMousePointer />} />
-        <StatCard title="Links" value="184" icon={<FiLink2 />} />
-        <StatCard title="Countries" value="37" icon={<FiGlobe />} />
-        <StatCard title="CTR" value="82%" icon={<FiTrendingUp />} />
+      {/* Browser Distribution */}
+      <BrowserCard
+        browsers={dashboard.browserDistribution}
+      />
 
-      </div>
-
-      <ChartCard />
-
-      <div className="grid gap-6 lg:grid-cols-2">
-
-        <CountryCard />
-
-        <DeviceCard />
-
-      </div>
-
-      <RecentLinks />
-
+      {/* Recent Links */}
+      <RecentLinks
+        links={dashboard.recentLinks}
+      />
     </div>
   );
 }

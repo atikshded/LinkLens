@@ -23,6 +23,14 @@ function Login() {
 
       localStorage.setItem("token", response.token);
 
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          name: response.name,
+          email: response.email,
+        })
+      );
+
       toast.success("Welcome back!");
       navigate("/dashboard");
 
