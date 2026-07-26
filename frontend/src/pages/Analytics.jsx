@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { Copy, Link as LinkIcon, Globe } from "lucide-react";
+import {
+    Copy,
+    Link as LinkIcon,
+    Globe,
+    Sparkles,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -16,12 +21,18 @@ import {
 } from "recharts";
 
 import {
-  getAnalytics,
-  getDailyClicks,
+    getAnalytics,
+    getDailyClicks,
+    getVariantPerformance,
+    getAiSummary,
 } from "../services/analyticsService";
+
+import VariantPerformanceTable from "../components/analytics/VariantPerformanceTable";
 
 function Analytics() {
   const [analytics, setAnalytics] = useState(null);
+  const [aiSummary, setAiSummary] = useState("");
+  const [aiLoading, setAiLoading] = useState(true);
   const [dailyClicks, setDailyClicks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,6 +40,7 @@ function Analytics() {
   const navigate = useNavigate();
 
   const hasSelectedLink = Boolean(id);
+  const [variantPerformance, setVariantPerformance] = useState([]);
 
   const copyShortUrl = async () => {
   try {
@@ -37,6 +49,21 @@ function Analytics() {
   } catch {
     toast.error("Failed to copy.");
   }
+};
+const copySummary = async () => {
+
+    try {
+
+        await navigator.clipboard.writeText(aiSummary);
+
+        toast.success("AI summary copied!");
+
+    } catch {
+
+        toast.error("Failed to copy summary.");
+
+    }
+
 };
 
   const browserData = analytics
@@ -74,15 +101,25 @@ function Analytics() {
 
     const fetchAnalytics = async () => {
       try {
-        const [analyticsData, dailyClicksData] =
-          await Promise.all([
-            getAnalytics(id),
-            getDailyClicks(id),
-          ]);
+        const [
+    analyticsData,
+    dailyClicksData,
+    variantPerformanceData,
+    aiSummaryData,
+] = await Promise.all([
+    getAnalytics(id),
+    getDailyClicks(id),
+    getVariantPerformance(id),
+    getAiSummary(id),
+]);
 
         setAnalytics(analyticsData);
         setDailyClicks(dailyClicksData);
+        setVariantPerformance(variantPerformanceData);
+        setAiSummary(aiSummaryData.summary);
+setAiLoading(false);
       } catch (error) {
+        setAiLoading(false);
         console.error(
           "Failed to load analytics:",
           error
@@ -208,7 +245,76 @@ function Analytics() {
 
   </div>
 )}
+<div className="mt-8 mb-10 rounded-3xl border border-slate-800 bg-gradient-to-r from-[#151E33] via-[#19223B] to-[#1B2440] p-8 shadow-xl">
 
+<div className="mb-7 flex items-start justify-between">
+
+    <div className="flex items-center gap-4">
+
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-500/15">
+            <Sparkles
+                size={28}
+                className="text-violet-400"
+            />
+        </div>
+
+        <div>
+
+            <div className="flex items-center gap-3">
+
+                <h2 className="text-[30px] font-bold text-white">
+                    AI Insights
+                </h2>
+
+                <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold tracking-wide text-violet-300">
+                    Gemini
+                </span>
+
+            </div>
+
+            <p className="mt-1 text-sm text-slate-400">
+                AI-powered analysis of your link performance
+            </p>
+
+        </div>
+
+    </div>
+
+    <button
+        onClick={copySummary}
+        className="rounded-2xl border border-slate-700 bg-slate-900/20 p-3 text-slate-400 transition hover:border-violet-500 hover:text-violet-400"
+        title="Copy AI Summary"
+    >
+        <Copy size={18} />
+    </button>
+
+</div>
+
+<div className="mb-7 border-t border-slate-700/60"></div>
+
+    {aiLoading ? (
+
+        <div className="animate-pulse space-y-3">
+
+    <div className="h-4 w-full rounded bg-slate-700"></div>
+
+    <div className="h-4 w-11/12 rounded bg-slate-700"></div>
+
+    <div className="h-4 w-10/12 rounded bg-slate-700"></div>
+
+    <div className="h-4 w-8/12 rounded bg-slate-700"></div>
+
+</div>
+
+    ) : (
+
+        <p className="mt-3 whitespace-pre-line text-[17px] leading-9 text-slate-300">
+            {aiSummary}
+        </p>
+
+    )}
+
+</div>
    
     
       </div>
@@ -436,8 +542,11 @@ function Analytics() {
                     />
 
                   </PieChart>
+                  
 
                 </ResponsiveContainer>
+                
+                
 
               </div>
 
@@ -582,6 +691,7 @@ function Analytics() {
         </div>
 
       </div>
+      <VariantPerformanceTable variants={variantPerformance} />
       </div>
 
   );

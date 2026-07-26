@@ -47,4 +47,8 @@ public class ClickEvent {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "link_id")
     private Link link;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "variant_id")
+    private LinkVariant variant;
 }

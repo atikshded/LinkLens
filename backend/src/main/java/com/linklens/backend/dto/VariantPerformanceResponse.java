@@ -1,21 +1,19 @@
 package com.linklens.backend.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class VariantResponse {
+public class VariantPerformanceResponse {
 
     private Long id;
-
     private String destinationUrl;
-
     private Integer weight;
-
     private Long clickCount;
 
-    private Boolean active;
 }

@@ -20,4 +20,10 @@ public class LinkSummaryResponse {
     private Long clickCount;
 
     private LocalDateTime createdAt;
+
+    private LocalDateTime expiresAt;
+
+    private Integer variantCount;
+
+    private boolean expired;
 }

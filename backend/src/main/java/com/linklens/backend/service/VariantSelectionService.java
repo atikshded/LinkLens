@@ -13,7 +13,15 @@ public class VariantSelectionService {
 
     public LinkVariant chooseVariant(List<LinkVariant> variants) {
 
-        int totalWeight = variants.stream()
+        List<LinkVariant> activeVariants = variants.stream()
+                .filter(LinkVariant::getActive)
+                .toList();
+
+        if (activeVariants.isEmpty()) {
+            throw new IllegalStateException("No active variants found.");
+        }
+
+        int totalWeight = activeVariants.stream()
                 .mapToInt(LinkVariant::getWeight)
                 .sum();
 
@@ -21,7 +29,7 @@ public class VariantSelectionService {
 
         int cumulativeWeight = 0;
 
-        for (LinkVariant variant : variants) {
+        for (LinkVariant variant : activeVariants) {
 
             cumulativeWeight += variant.getWeight();
 
@@ -30,6 +38,6 @@ public class VariantSelectionService {
             }
         }
 
-        return variants.get(0);
+        return activeVariants.get(0);
     }
 }

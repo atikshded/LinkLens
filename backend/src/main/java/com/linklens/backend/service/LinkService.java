@@ -5,26 +5,28 @@ import com.linklens.backend.dto.LinkDetailsResponse;
 import com.linklens.backend.dto.LinkResponse;
 import com.linklens.backend.dto.LinkSummaryResponse;
 import com.linklens.backend.entity.Link;
+import com.linklens.backend.entity.LinkVariant;
 import com.linklens.backend.entity.User;
+import com.linklens.backend.exception.AccessDeniedException;
+import com.linklens.backend.exception.LinkExpiredException;
 import com.linklens.backend.exception.ResourceNotFoundException;
 import com.linklens.backend.repository.LinkRepository;
-import com.linklens.backend.repository.UserRepository;
+import com.linklens.backend.repository.LinkVariantRepository;
+import com.linklens.backend.util.AliasValidator;
 import com.linklens.backend.util.ShortCodeGenerator;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import com.linklens.backend.exception.AccessDeniedException;
-import com.linklens.backend.util.AliasValidator;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.linklens.backend.util.UrlUtil;
 
 @Service
 public class LinkService {
 
     private final LinkRepository linkRepository;
-    private final UserRepository userRepository;
+    private final LinkVariantRepository variantRepository;
+    private final CurrentUserService currentUserService;
     private final ClickEventService clickEventService;
     private final RedisService redisService;
     private final VariantSelectionService variantSelectionService;
@@ -33,31 +35,18 @@ public class LinkService {
     private String baseUrl;
 
     public LinkService(LinkRepository linkRepository,
-                       UserRepository userRepository,
+                       LinkVariantRepository variantRepository,
+                       CurrentUserService currentUserService,
                        ClickEventService clickEventService,
                        RedisService redisService,
                        VariantSelectionService variantSelectionService) {
 
         this.linkRepository = linkRepository;
-        this.userRepository = userRepository;
+        this.variantRepository = variantRepository;
+        this.currentUserService = currentUserService;
         this.clickEventService = clickEventService;
         this.redisService = redisService;
         this.variantSelectionService = variantSelectionService;
-    }
-
-    /**
-     * Returns the currently authenticated user.
-     */
-    private User getCurrentUser() {
-
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        String email = authentication.getName();
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
     }
 
     /**
@@ -65,7 +54,15 @@ public class LinkService {
      */
     public LinkResponse createShortLink(CreateLinkRequest request) {
 
-        User user = getCurrentUser();
+        User user = currentUserService.getCurrentUser();
+
+        if (request.getExpiresAt() != null &&
+                request.getExpiresAt().isBefore(LocalDateTime.now())) {
+
+            throw new IllegalArgumentException(
+                    "Expiry time must be in the future."
+            );
+        }
 
         String shortCode;
 
@@ -94,7 +91,9 @@ public class LinkService {
         }
 
         Link link = Link.builder()
-                .originalUrl(request.getOriginalUrl())
+                .originalUrl(
+                        UrlUtil.normalizeUrl(request.getOriginalUrl())
+                )
                 .shortCode(shortCode)
                 .createdAt(LocalDateTime.now())
                 .expiresAt(request.getExpiresAt())
@@ -104,12 +103,15 @@ public class LinkService {
 
         linkRepository.save(link);
 
-
         return new LinkResponse(
                 link.getId(),
                 link.getOriginalUrl(),
                 link.getShortCode(),
-                baseUrl + "/r/" + link.getShortCode()
+                baseUrl + "/r/" + link.getShortCode(),
+                link.getExpiresAt(),
+                0,
+                link.getExpiresAt() != null &&
+                        link.getExpiresAt().isBefore(LocalDateTime.now())
         );
     }
 
@@ -117,72 +119,52 @@ public class LinkService {
      * Returns the original URL for a short code
      * and increments click count.
      */
+    @Transactional
     public String getOriginalUrl(
             String shortCode,
             String userAgent,
-            String ipAddress)
-    {
-
-        System.out.println("========== REDIRECT ==========");
-        System.out.println("Received shortCode: '" + shortCode + "'");
-
-//        String cachedUrl = redisService.getUrl(shortCode);
-
-//        if (cachedUrl != null) {
-//
-//            System.out.println("✅ Cache HIT");
-//
-//            Link link = linkRepository.findByShortCode(shortCode)
-//                    .orElseThrow(() ->
-//                            new ResourceNotFoundException("Short URL not found"));
-//
-//            link.setClickCount(link.getClickCount() + 1);
-//            linkRepository.save(link);
-//
-//            clickEventService.recordClick(
-//                    link,
-//                    userAgent,
-//                    ipAddress
-//            );
-//
-//            return cachedUrl;
-//        }
-
-//        System.out.println("❌ Cache MISS");
-
-        System.out.println("Looking up in database...");
-        System.out.println("----- ALL LINKS -----");
-        linkRepository.findAll().forEach(link ->
-                System.out.println(
-                        "id=" + link.getId() +
-                                ", shortCode='" + link.getShortCode() + "'"
-                )
-        );
-        System.out.println("---------------------");
-
-        System.out.println("All short codes in DB:");
-
-        linkRepository.findAll().forEach(l ->
-                System.out.println("'" + l.getShortCode() + "'"));
+            String ipAddress) {
 
         Link link = linkRepository.findByShortCode(shortCode)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Short URL not found"));
 
-        System.out.println("Found link: " + link.getShortCode());
+        if (link.getExpiresAt() != null &&
+                LocalDateTime.now().isAfter(link.getExpiresAt())) {
+
+            throw new LinkExpiredException("This short link has expired.");
+        }
+
+        LinkVariant selectedVariant = null;
+        String destinationUrl;
+
+        if (link.getVariants() == null || link.getVariants().isEmpty()) {
+
+            destinationUrl = link.getOriginalUrl();
+
+        } else {
+
+            selectedVariant = variantSelectionService
+                    .chooseVariant(link.getVariants());
+
+            selectedVariant.setClickCount(
+                    selectedVariant.getClickCount() + 1
+            );
+
+            variantRepository.save(selectedVariant);
+
+            destinationUrl = selectedVariant.getDestinationUrl();
+        }
 
         link.setClickCount(link.getClickCount() + 1);
-
         linkRepository.save(link);
 
-        clickEventService.recordClick(link, userAgent, ipAddress);
-
-        String destinationUrl = getDestinationUrl(link);
-
-        // Temporarily disable redirect URL caching
-        // until we redesign Redis for variant-aware caching.
-
-        // redisService.saveUrl(shortCode, destinationUrl);
+        clickEventService.recordClick(
+                link,
+                selectedVariant,
+                userAgent,
+                ipAddress
+        );
 
         return destinationUrl;
     }
@@ -192,7 +174,7 @@ public class LinkService {
      */
     public List<LinkSummaryResponse> getMyLinks() {
 
-        User user = getCurrentUser();
+        User user = currentUserService.getCurrentUser();
 
         List<Link> links = linkRepository.findByUser(user);
 
@@ -203,19 +185,29 @@ public class LinkService {
                         link.getShortCode(),
                         baseUrl + "/r/" + link.getShortCode(),
                         link.getClickCount(),
-                        link.getCreatedAt()
+                        link.getCreatedAt(),
+                        link.getExpiresAt(),
+                        link.getVariants() == null
+                                ? 0
+                                : link.getVariants().size(),
+                        link.getExpiresAt() != null &&
+                                link.getExpiresAt().isBefore(LocalDateTime.now())
                 ))
                 .toList();
     }
 
     public LinkDetailsResponse getLinkDetails(Long id) {
-        User currentUser = getCurrentUser();
+
+        User currentUser = currentUserService.getCurrentUser();
+
         Link link = linkRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Link not found"));
+
         if (!link.getUser().getId().equals(currentUser.getId())) {
             throw new AccessDeniedException("Access Denied");
         }
+
         return new LinkDetailsResponse(
                 link.getId(),
                 link.getOriginalUrl(),
@@ -238,7 +230,7 @@ public class LinkService {
 
     public void deleteLink(Long id) {
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         Link link = linkRepository.findById(id)
                 .orElseThrow(() ->
@@ -250,16 +242,4 @@ public class LinkService {
 
         linkRepository.delete(link);
     }
-
-    private String getDestinationUrl(Link link) {
-
-        if (link.getVariants() == null || link.getVariants().isEmpty()) {
-            return link.getOriginalUrl();
-        }
-
-        return variantSelectionService
-                .chooseVariant(link.getVariants())
-                .getDestinationUrl();
-    }
-
 }

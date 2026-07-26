@@ -12,6 +12,8 @@ import java.net.URI;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.beans.factory.annotation.Value;
+
 @Tag(
         name = "Redirect",
         description = "Public redirection APIs"
@@ -22,6 +24,12 @@ public class RedirectController {
 
     private final LinkService linkService;
     private final RedisService redisService;
+
+    @Value("${app.rate-limit.max-requests}")
+    private int maxRequests;
+
+    @Value("${app.rate-limit.window-seconds}")
+    private int windowSeconds;
 
     public RedirectController(
             LinkService linkService,
@@ -38,6 +46,7 @@ public class RedirectController {
     @ApiResponses({
             @ApiResponse(responseCode = "302", description = "Successfully redirected"),
             @ApiResponse(responseCode = "404", description = "Short URL not found"),
+            @ApiResponse(responseCode = "410", description = "Link has expired"),
             @ApiResponse(responseCode = "429", description = "Rate limit exceeded")
     })
     @GetMapping("/r/{shortCode}")
@@ -49,8 +58,8 @@ public class RedirectController {
 
         if (!redisService.allowRequest(
                 ipAddress,
-                3,
-                60)) {
+                maxRequests,
+                windowSeconds)) {
 
             throw new RateLimitExceededException(
                     "Too many requests. Please try again later."

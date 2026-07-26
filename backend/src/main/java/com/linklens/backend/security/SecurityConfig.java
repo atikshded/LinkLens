@@ -43,6 +43,7 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/ai/**",
                                 "/oauth2/**",
                                 "/login/**",
                                 "/api/links/*/qr",

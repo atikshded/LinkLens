@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
+@Table(name = "link_variants")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,6 +21,14 @@ public class LinkVariant {
 
     @Column(nullable = false)
     private Integer weight;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Long clickCount = 0L;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean active = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "link_id", nullable = false)

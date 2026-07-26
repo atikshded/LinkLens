@@ -3,6 +3,7 @@ package com.linklens.backend.service;
 import com.linklens.backend.dto.GeoLocationResponse;
 import com.linklens.backend.entity.ClickEvent;
 import com.linklens.backend.entity.Link;
+import com.linklens.backend.entity.LinkVariant;
 import com.linklens.backend.repository.ClickEventRepository;
 import org.springframework.stereotype.Service;
 import ua_parser.Client;
@@ -26,8 +27,10 @@ public class ClickEventService {
 
     public void recordClick(
             Link link,
+            LinkVariant variant,
             String userAgent,
             String ipAddress) {
+
         GeoLocationResponse location =
                 geoLocationService.getLocation("8.8.8.8");
 
@@ -45,6 +48,7 @@ public class ClickEventService {
                 .longitude(location != null ? location.getLon() : null)
                 .userAgent(userAgent)
                 .link(link)
+                .variant(variant)
                 .browserVersion(client != null ? client.userAgent.major : null)
                 .ipAddress(ipAddress)
                 .build();

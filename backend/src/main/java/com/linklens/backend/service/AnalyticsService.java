@@ -2,28 +2,36 @@ package com.linklens.backend.service;
 
 import com.linklens.backend.dto.DailyClickResponse;
 import com.linklens.backend.dto.LinkAnalyticsResponse;
+import com.linklens.backend.dto.VariantPerformanceResponse;
 import com.linklens.backend.entity.ClickEvent;
 import com.linklens.backend.entity.Link;
 import com.linklens.backend.exception.ResourceNotFoundException;
 import com.linklens.backend.repository.ClickEventRepository;
 import com.linklens.backend.repository.LinkRepository;
+import com.linklens.backend.repository.LinkVariantRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import com.linklens.backend.service.model.AnalyticsData;
 
 @Service
 public class AnalyticsService {
 
     private final LinkRepository linkRepository;
     private final ClickEventRepository clickEventRepository;
+    private final LinkVariantRepository linkVariantRepository;
 
-    public AnalyticsService(LinkRepository linkRepository,
-                            ClickEventRepository clickEventRepository) {
+    public AnalyticsService(
+            LinkRepository linkRepository,
+            ClickEventRepository clickEventRepository,
+            LinkVariantRepository linkVariantRepository) {
+
         this.linkRepository = linkRepository;
         this.clickEventRepository = clickEventRepository;
+        this.linkVariantRepository = linkVariantRepository;
     }
 
     public LinkAnalyticsResponse getAnalytics(Long linkId) {
@@ -123,5 +131,50 @@ public class AnalyticsService {
                                 entry.getValue()
                         ))
                 .toList();
+    }
+
+    public List<VariantPerformanceResponse> getVariantPerformance(Long linkId) {
+
+        // Verify the link exists
+        linkRepository.findById(linkId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Link not found"));
+
+        return linkVariantRepository.findByLinkId(linkId)
+                .stream()
+                .map(variant -> new VariantPerformanceResponse(
+                        variant.getId(),
+                        variant.getDestinationUrl(),
+                        variant.getWeight(),
+                        variant.getClickCount()
+                ))
+                .toList();
+    }
+
+    public AnalyticsData getAnalyticsData(Long linkId) {
+
+        LinkAnalyticsResponse analytics = getAnalytics(linkId);
+
+        List<DailyClickResponse> dailyClicks = getDailyClicks(linkId);
+
+        List<VariantPerformanceResponse> variants =
+                getVariantPerformance(linkId);
+
+        AnalyticsData data = new AnalyticsData();
+
+        data.setTotalClicks(analytics.getTotalClicks());
+        data.setLastClickedAt(analytics.getLastClickedAt());
+        data.setTopBrowser(analytics.getTopBrowser());
+        data.setTopOperatingSystem(analytics.getTopOperatingSystem());
+        data.setBrowserDistribution(analytics.getBrowserDistribution());
+        data.setOperatingSystemDistribution(
+                analytics.getOperatingSystemDistribution());
+        data.setOriginalUrl(analytics.getOriginalUrl());
+        data.setShortUrl(analytics.getShortUrl());
+
+        data.setDailyClicks(dailyClicks);
+        data.setVariants(variants);
+
+        return data;
     }
 }

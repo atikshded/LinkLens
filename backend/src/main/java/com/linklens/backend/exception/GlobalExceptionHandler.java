@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.time.LocalDateTime;
 
 
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -57,6 +58,22 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex) {
+
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage()
+        );
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<ErrorResponse> handleRateLimit(
             RateLimitExceededException ex) {
@@ -70,6 +87,22 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 error,
                 HttpStatus.TOO_MANY_REQUESTS
+        );
+    }
+
+    @ExceptionHandler(LinkExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleLinkExpired(
+            LinkExpiredException ex) {
+
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.GONE.value(),
+                ex.getMessage()
+        );
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.GONE
         );
     }
 }
