@@ -1,19 +1,26 @@
-FROM eclipse-temurin:21-jdk
+# ---------- Stage 1 : Build ----------
+FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
 
 COPY .mvn .mvn
 COPY mvnw .
 COPY pom.xml .
-RUN chmod +x mvnw
 
-# Download dependencies first (better caching)
+RUN chmod +x mvnw
 RUN ./mvnw dependency:go-offline
 
 COPY src src
 
 RUN ./mvnw clean package -DskipTests
 
+# ---------- Stage 2 : Runtime ----------
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+COPY --from=builder /app/target/backend-0.0.1-SNAPSHOT.jar app.jar
+
 EXPOSE 8081
 
-CMD ["java","-jar","target/backend-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]

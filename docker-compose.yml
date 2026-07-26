@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: linklens-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: linklens
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: kHushi1@6
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: linklens-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+    container_name: linklens-backend
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/linklens
+      DB_USERNAME: postgres
+      DB_PASSWORD: kHushi1@6
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  postgres_data:
