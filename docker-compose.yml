@@ -6,10 +6,6 @@ services:
     image: postgres:16
     container_name: linklens-postgres
     restart: always
-    environment:
-      POSTGRES_DB: linklens
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: kHushi1@6
     ports:
       - "5433:5432"
     volumes:
@@ -29,13 +25,12 @@ services:
     restart: always
     ports:
       - "8081:8081"
+
+    env_file:
+      - ./backend/.env
+
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/linklens
-      DB_USERNAME: postgres
-      DB_PASSWORD: kHushi1@6
-
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
 
     depends_on:
       - postgres

@@ -24,12 +24,14 @@ import com.linklens.backend.util.UrlUtil;
 @Service
 public class LinkService {
 
+
     private final LinkRepository linkRepository;
     private final LinkVariantRepository variantRepository;
     private final CurrentUserService currentUserService;
     private final ClickEventService clickEventService;
     private final RedisService redisService;
     private final VariantSelectionService variantSelectionService;
+
 
     @Value("${app.base-url}")
     private String baseUrl;
@@ -53,6 +55,7 @@ public class LinkService {
      * Creates a new shortened link.
      */
     public LinkResponse createShortLink(CreateLinkRequest request) {
+        System.out.println("Base URL = " + baseUrl);
 
         User user = currentUserService.getCurrentUser();
 
