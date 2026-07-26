@@ -55,7 +55,7 @@ public class LinkService {
      * Creates a new shortened link.
      */
     public LinkResponse createShortLink(CreateLinkRequest request) {
-        System.out.println("Base URL = " + baseUrl);
+
 
         User user = currentUserService.getCurrentUser();
 
