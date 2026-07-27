@@ -171,14 +171,9 @@ function LoginCard({
         <GoogleButton
           onClick={() => {
             const API_URL = import.meta.env.VITE_API_URL.replace("/api", "");
-
-<GoogleButton
-  onClick={() => {
     window.location.href = `${API_URL}/oauth2/authorization/google`;
   }}
 />
-          }}
-        />
 
         <p className="pt-0 text-center text-sm text-slate-400">
 
