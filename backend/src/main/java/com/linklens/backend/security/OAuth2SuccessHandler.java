@@ -72,7 +72,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             System.out.println("JWT Generated");
 
             String redirectUrl =
-                    "http://localhost:5173/oauth-success?token=" + token;
+    "https://linklens.co.in/oauth-success?token=" + token;
 
             System.out.println("Redirecting to:");
             System.out.println(redirectUrl);
