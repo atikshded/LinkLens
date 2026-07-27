@@ -9,7 +9,7 @@ function QRCodeModal({
 }) {
   if (!isOpen) return null;
 
-  const qrUrl = `http://localhost:8081/api/links/${linkId}/qr`;
+  const qrUrl = `${import.meta.env.VITE_API_URL}/links/${linkId}/qr`;
 
   const handleDownload = async () => {
   try {
